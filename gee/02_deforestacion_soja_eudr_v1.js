@@ -36,9 +36,17 @@ var CFG = {
   picoCultivo: ['2026-01-01', '2026-04-01'],
 
   // Umbrales (calibrar)
-  umbralSueloP10: 0.25,   // p10 anual de NDVI por debajo = hubo suelo desnudo
+  umbralSueloP10: 0.28,   // p10 anual de NDVI por debajo = hubo suelo desnudo
+                          // (calibración: cultivos 0.15–0.23, bosque 0.34–0.42;
+                          //  ver docs/puntos_calibracion.csv)
   umbralPresiembra: 0.30, // NDVI bajo antes de la siembra
   umbralPicoCultivo: 0.70,// NDVI alto en el pico del cultivo
+                          // (cultivos consolidados 0.86–0.91; lotes recién
+                          //  desmontados pueden quedar entre 0.60 y 0.70)
+
+  // Ventanas para composites RGB de verificación visual (estación seca)
+  rgbCorte: ['2020-06-01', '2021-01-01'],
+  rgbActual: ['2025-06-01', '2025-10-01'],
   umbralCloudScore: 0.60, // Cloud Score+ (cs_cdf): 0 = nube, 1 = despejado
 
   // Unidad mínima: 0,5 ha = 50 píxeles de 10 m
@@ -162,6 +170,21 @@ var perdidaHansen = hansen.select('lossyear')
 
 
 // ---------------- 7. VISUALIZACIÓN ----------------
+// Composites RGB de Sentinel-2 para verificar visualmente. La capa
+// "Satélite" de Google no indica su fecha y puede ser anterior al desmonte.
+var s2Rgb = ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
+  .filterBounds(aoi)
+  .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 30))
+  .linkCollection(csPlus, ['cs_cdf'])
+  .map(function (img) {
+    return img.updateMask(img.select('cs_cdf').gte(CFG.umbralCloudScore));
+  });
+var visRgb = {bands: ['B4', 'B3', 'B2'], min: 0, max: 2500};
+Map.addLayer(s2Rgb.filterDate(CFG.rgbCorte[0], CFG.rgbCorte[1]).median().clip(aoi),
+  visRgb, 'S2 RGB 2020 (fecha de corte)', false);
+Map.addLayer(s2Rgb.filterDate(CFG.rgbActual[0], CFG.rgbActual[1]).median().clip(aoi),
+  visRgb, 'S2 RGB 2025 (estación seca)', false);
+
 Map.addLayer(bosqueJRC.selfMask(), {palette: ['1a7f37']}, 'Bosque JRC 2020', false);
 Map.addLayer(cultivoVerano.selfMask(), {palette: ['c9b98a']}, 'Cultivo de verano 2025/26', false);
 Map.addLayer(perdidaHansen.selfMask(), {palette: ['ff00ff']}, 'Pérdida Hansen post-2020', false);

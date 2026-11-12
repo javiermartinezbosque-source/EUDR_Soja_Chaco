@@ -47,7 +47,7 @@ NDVI campaña 2025/26 (presiembra + pico) ─► Cultivo de verano ────�
 ```
 
 1. **Bosque al corte.** Se parte del mapa JRC GFC2020 y se descartan los píxeles que ya mostraron suelo desnudo durante 2020, es decir, desmontes anteriores al corte o errores del mapa.
-2. **Pérdida post-2020.** Se calcula el **percentil 10 anual del NDVI**. Un bosque nativo mantiene cierta cobertura todo el año, mientras que un lote agrícola pasa por suelo desnudo (presiembra o poscosecha). El año de pérdida es el primero en que aparece suelo desnudo, y se exige que siga así en 2025 para no confundir un incendio con un desmonte.
+2. **Pérdida post-2020.** Se calcula el **percentil 10 anual del NDVI** (umbral de suelo desnudo: 0,28). Un bosque nativo mantiene cierta cobertura todo el año, mientras que un lote agrícola pasa por suelo desnudo (presiembra o poscosecha). El año de pérdida es el primero en que aparece suelo desnudo, y se exige que siga así en 2025 para no confundir un incendio con un desmonte.
 3. **Cultivo de verano.** En la campaña 2025/26 se busca suelo desnudo entre octubre y diciembre (p10 de NDVI < 0,30) seguido de un pico de vegetación entre enero y marzo (p90 de NDVI > 0,70).
 4. **Unidad mínima de 0,5 ha**, de acuerdo con la definición de bosque de la FAO que usa el EUDR.
 5. **Clasificación final:**
@@ -60,6 +60,22 @@ NDVI campaña 2025/26 (presiembra + pico) ─► Cultivo de verano ────�
 | 4 · Cultivo sin conflicto | Cultivo sobre tierras que no eran bosque en 2020 |
 
 6. **Validación cruzada** con la pérdida de Hansen (`lossyear ≥ 2021`) dentro del mismo bosque 2020.
+
+### Calibración de umbrales
+
+Los umbrales se ajustaron con una calibración exploratoria: se inspeccionaron píxeles representativos de cada clase (`docs/puntos_calibracion.csv`).
+
+| Uso del suelo | p10 anual de NDVI | Presiembra (p10) | Pico (p90) |
+|---|---|---|---|
+| Bosque estable | 0,41–0,42 | 0,51 | 0,80 |
+| Cultivo consolidado | 0,15–0,23 | 0,13–0,19 | 0,86–0,91 |
+| Lote recién desmontado | 0,16 | 0,15–0,19 | 0,60–0,69 |
+
+- El umbral de suelo desnudo pasó de 0,25 a **0,28**, cerca del punto medio entre cultivo (≤ 0,23) y bosque (≥ 0,34).
+- El pico por sí solo no separa bosque de cultivo (el bosque llega a 0,80). Lo que separa es la combinación con la **presiembra**.
+- Los lotes desmontados recientemente pueden tener un pico más bajo que los cultivos consolidados. Con el umbral de 0,70, un mismo lote puede quedar repartido entre las clases 2 y 3 (ver Limitaciones).
+
+Para verificar visualmente conviene usar los composites RGB de Sentinel-2 que incluye el script, no la capa "Satélite" de Google: esa capa no indica su fecha y puede ser anterior al desmonte.
 
 ## Resultados
 
@@ -77,6 +93,7 @@ Pérdida por año (2021–2025) y comparación con Hansen: _pendiente_.
 ## Limitaciones
 
 - **Cultivo de verano ≠ soja.** Con NDVI solo no se distingue la soja del maíz, el algodón o el sorgo. Separar la soja requeriría un mapa de cultivos o un clasificador entrenado con verdad de campo.
+- **Clasificación por píxel.** En lotes recién desmontados, el NDVI del pico varía dentro del mismo lote, y parte del lote puede quedar como "deforestación sin cultivo" (clase 2). Por eso la clase 3 es probablemente una **estimación conservadora**. Una clasificación por lote (objetos) reduciría este efecto.
 - **Umbrales calibrados a mano.** Los valores de NDVI se ajustaron inspeccionando píxeles. No hay una validación estadística con puntos de referencia independientes.
 - **Dependencia del mapa JRC.** Sus errores de comisión u omisión en el bosque chaqueño seco se trasladan al resultado.
 - **Bosque seco y caducifolio.** La caída estacional del NDVI en bosques degradados o abiertos puede generar falsos positivos.
@@ -97,13 +114,16 @@ Pérdida por año (2021–2025) y comparación con Hansen: _pendiente_.
 gee/
 ├── 01_deforestacion_ndvi_v0.js      # Primera versión (composites max de NDVI)
 └── 02_deforestacion_soja_eudr_v1.js # Versión actual
+docs/
+└── puntos_calibracion.csv           # Píxeles usados para calibrar los umbrales
 ```
 
 La v0 se conserva como registro: el composite `max()` de NDVI no distingue un bosque de un cultivo en su pico de crecimiento, por lo que subestimaba la conversión a soja. Ese problema motivó la v1.
 
 ## Próximos pasos
 
-- [ ] Calibrar umbrales con puntos de referencia (bosque, lote, desmonte)
+- [x] Calibración exploratoria de umbrales
+- [ ] Clasificación por lote para reducir la fragmentación entre las clases 2 y 3
 - [ ] Validación con muestreo aleatorio estratificado e interpretación visual
 - [ ] Incorporar un mapa de cultivos para separar la soja
 - [ ] Cruzar con las categorías de los OTBN provinciales
