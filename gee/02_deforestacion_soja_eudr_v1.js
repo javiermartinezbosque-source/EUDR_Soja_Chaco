@@ -56,6 +56,13 @@ var CFG = {
   jrcForest: 'JRC/GFC2020/V2',
   hansen: 'UMD/hansen/global_forest_change_2024_v1_12',
 
+  // true = solo crea las tareas de exportación (no dibuja capas en el mapa
+  // ni calcula al hacer clic). Usar así para ahorrar cuota de cómputo.
+  soloExportar: true,
+
+  // Asset de salida para el visor liviano (03_visor_eudr.js)
+  assetId: 'projects/my-project-javier-464019/assets/eudr_chaco_v1',
+
   crs: 'EPSG:32720', // UTM 20S
   escala: 10,
   carpetaDrive: 'EUDR_Chaco'
@@ -136,9 +143,16 @@ var ndviPresiembra = ndviCol.filterDate(CFG.presiembra[0], CFG.presiembra[1])
 var ndviPico = ndviCol.filterDate(CFG.picoCultivo[0], CFG.picoCultivo[1])
   .reduce(ee.Reducer.percentile([90]));
 
-var cultivoVerano = ndviPresiembra.lt(CFG.umbralPresiembra)
+var cultivoBruto = ndviPresiembra.lt(CFG.umbralPresiembra)
   .and(ndviPico.gt(CFG.umbralPicoCultivo))
+  .unmask(0);
+
+// Unidad mínima 0,5 ha: elimina píxeles sueltos en monte abierto
+var cultivoVerano = cultivoBruto.selfMask()
+  .connectedPixelCount(CFG.minPixeles + 1, true)
+  .gte(CFG.minPixeles)
   .unmask(0)
+  .and(cultivoBruto)
   .rename('cultivo_verano');
 
 
@@ -170,6 +184,7 @@ var perdidaHansen = hansen.select('lossyear')
 
 
 // ---------------- 7. VISUALIZACIÓN ----------------
+if (!CFG.soloExportar) {
 // Composites RGB de Sentinel-2 para verificar visualmente. La capa
 // "Satélite" de Google no indica su fecha y puede ser anterior al desmonte.
 var s2Rgb = ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
@@ -210,6 +225,7 @@ var chacoRegional = ee.Geometry.Rectangle([-65.5, -29.0, -58.0, -22.0]);
 Map.addLayer(
   ee.Image(CFG.hansen).select('lossyear').gte(21).selfMask().clip(chacoRegional),
   {palette: ['ff00ff']}, 'Contexto: pérdida Hansen 2021+ (regional)', false);
+} // fin visualización
 
 
 // ---------------- 8. ESTADÍSTICAS (EXPORTADAS COMO TABLA) ----------------
@@ -279,9 +295,56 @@ var paraInspeccion = p10Anual(CFG.anioBase)
   .addBands(bosqueJRC.rename('bosque_JRC'))
   .addBands(clase);
 
-Map.onClick(function (coords) {
-  var punto = ee.Geometry.Point([coords.lon, coords.lat]);
-  print('Valores en', coords.lat.toFixed(5) + ', ' + coords.lon.toFixed(5),
-        paraInspeccion.reduceRegion(ee.Reducer.first(), punto, CFG.escala));
+if (!CFG.soloExportar) {
+  Map.onClick(function (coords) {
+    var punto = ee.Geometry.Point([coords.lon, coords.lat]);
+    print('Valores en', coords.lat.toFixed(5) + ', ' + coords.lon.toFixed(5),
+          paraInspeccion.reduceRegion(ee.Reducer.first(), punto, CFG.escala));
+  });
+  Map.style().set('cursor', 'crosshair');
+}
+
+
+// ---------------- 11. EXPORTACIÓN A ASSET (PARA EL VISOR LIVIANO) ----------------
+// Todas las bandas en Int16. Las de NDVI se guardan multiplicadas por 10000.
+function ndviEntero(img, nombre) {
+  return img.multiply(10000).round().toInt16().rename(nombre);
+}
+
+var paraAsset = ee.Image.cat([
+  clase.toInt16(),
+  anioPerdida.unmask(0).toInt16(),
+  bosque2020.toInt16(),
+  cultivoVerano.toInt16(),
+  perdidaHansen.toInt16(),
+  bosqueJRC.toInt16().rename('bosque_jrc'),
+  ndviEntero(p10Anual(CFG.anioBase), 'p10_' + CFG.anioBase),
+  ndviEntero(p10Anual(ultimoAnio), 'p10_' + ultimoAnio),
+  ndviEntero(ndviPresiembra, 'ndvi_presiembra_p10'),
+  ndviEntero(ndviPico, 'ndvi_pico_p90')
+]).clip(aoi).set({
+  version: 'v1',
+  umbral_suelo_p10: CFG.umbralSueloP10,
+  umbral_presiembra: CFG.umbralPresiembra,
+  umbral_pico_cultivo: CFG.umbralPicoCultivo,
+  min_pixeles: CFG.minPixeles,
+  jrc: CFG.jrcForest,
+  hansen: CFG.hansen
 });
-Map.style().set('cursor', 'crosshair');
+
+Export.image.toAsset({
+  image: paraAsset,
+  description: 'Asset_EUDR_Chaco_v1',
+  assetId: CFG.assetId,
+  region: aoi,
+  scale: CFG.escala,
+  crs: CFG.crs,
+  maxPixels: 1e11,
+  pyramidingPolicy: {
+    '.default': 'mode',            // bandas categóricas
+    'p10_2020': 'mean',
+    'p10_2025': 'mean',
+    'ndvi_presiembra_p10': 'mean',
+    'ndvi_pico_p90': 'mean'
+  }
+});

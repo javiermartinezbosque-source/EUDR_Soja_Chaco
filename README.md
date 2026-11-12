@@ -49,7 +49,7 @@ NDVI campaña 2025/26 (presiembra + pico) ─► Cultivo de verano ────�
 1. **Bosque al corte.** Se parte del mapa JRC GFC2020 y se descartan los píxeles que ya mostraron suelo desnudo durante 2020, es decir, desmontes anteriores al corte o errores del mapa.
 2. **Pérdida post-2020.** Se calcula el **percentil 10 anual del NDVI** (umbral de suelo desnudo: 0,28). Un bosque nativo mantiene cierta cobertura todo el año, mientras que un lote agrícola pasa por suelo desnudo (presiembra o poscosecha). El año de pérdida es el primero en que aparece suelo desnudo, y se exige que siga así en 2025 para no confundir un incendio con un desmonte.
 3. **Cultivo de verano.** En la campaña 2025/26 se busca suelo desnudo entre octubre y diciembre (p10 de NDVI < 0,30) seguido de un pico de vegetación entre enero y marzo (p90 de NDVI > 0,70).
-4. **Unidad mínima de 0,5 ha**, de acuerdo con la definición de bosque de la FAO que usa el EUDR.
+4. **Unidad mínima de 0,5 ha** para la pérdida y para el cultivo, de acuerdo con la definición de bosque de la FAO que usa el EUDR. En el cultivo, además, elimina píxeles sueltos en monte abierto que pasan los umbrales sin ser lotes.
 5. **Clasificación final:**
 
 | Clase | Significado |
@@ -102,18 +102,27 @@ Pérdida por año (2021–2025) y comparación con Hansen: _pendiente_.
 
 ## Cómo reproducirlo
 
+El cálculo completo es pesado: series de Sentinel-2 de 6 años a 10 m. Por eso se separa en dos pasos.
+
+**Paso 1 · Procesamiento (una sola vez)**
 1. Abrir [Google Earth Engine Code Editor](https://code.earthengine.google.com/).
-2. Pegar el contenido de `gee/02_deforestacion_soja_eudr_v1.js`.
-3. Ajustar el bloque `CFG` (área, años, umbrales) si hace falta y ejecutar con **Run**.
-4. Desde la pestaña **Tasks**, lanzar las exportaciones a Google Drive (carpeta `EUDR_Chaco`).
-5. Hacer clic en el mapa para ver en la consola los valores de NDVI usados en cada umbral.
+2. Pegar `gee/02_deforestacion_soja_eudr_v1.js` y ajustar el bloque `CFG`: área, años, umbrales y `assetId` con el proyecto propio.
+3. Con `soloExportar: true`, ejecutar con **Run**. Solo se crean las tareas, sin calcular nada en el mapa.
+4. En **Tasks**, lanzar `Asset_EUDR_Chaco_v1` (obligatoria para el visor). Opcionalmente, lanzar también las exportaciones a Drive: CSV de estadísticas y GeoTIFFs.
+
+**Paso 2 · Exploración (liviano)**
+1. Pegar `gee/03_visor_eudr.js` y ejecutar.
+2. Hacer clic en el mapa para ver los valores de NDVI de cada umbral, y usar el botón **Calcular hectáreas** para las estadísticas.
+
+Para recalibrar los umbrales con el mapa en vivo, usar `soloExportar: false` en el script 02. Ojo: consume bastante más cuota.
 
 ## Estructura
 
 ```
 gee/
 ├── 01_deforestacion_ndvi_v0.js      # Primera versión (composites max de NDVI)
-└── 02_deforestacion_soja_eudr_v1.js # Versión actual
+├── 02_deforestacion_soja_eudr_v1.js # Procesamiento completo + exportación a asset
+└── 03_visor_eudr.js                 # Visor liviano sobre el asset
 docs/
 └── puntos_calibracion.csv           # Píxeles usados para calibrar los umbrales
 ```
