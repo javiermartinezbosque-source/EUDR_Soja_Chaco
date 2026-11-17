@@ -152,6 +152,64 @@ Este análisis detecta aproximadamente **la mitad** de la pérdida que registra 
 
 > ⚠️ **Encuadre legal incierto:** si un sistema silvopastoril conserva árboles de más de 5 m con más del 10% de cobertura, por la definición de la FAO podría seguir siendo "bosque" (degradado). Pero el EUDR excluye del concepto de bosque las tierras de uso predominantemente agropecuario. Cómo se clasifica este caso no está resuelto en este análisis: debería verificarse con el texto del reglamento y con las guías de la Comisión Europea.
 
+## Análisis por parcela (screening EUDR + Ley 26.331)
+
+El análisis regional muestra **dónde** hay riesgo, pero una decisión de compra se toma sobre **parcelas concretas**. Según mi lectura del reglamento (a verificar en el texto vigente), el EUDR exige geolocalizar las parcelas de producción. `gee/04_parcelas_eudr.js` evalúa esos polígonos sobre la clasificación v2 y devuelve, para cada parcela:
+
+- hectáreas por clase (bosque estable, deforestación con y sin cultivo, pastura probable, cultivo sin conflicto) y pérdida según Hansen;
+- años de pérdida según este análisis y según Hansen;
+- un **dictamen EUDR de screening**:
+
+| Dictamen | Criterio (tolerancia: 0,5 ha) |
+|---|---|
+| 🟢 Sin deforestación post-2020 detectada | Ninguna señal de conversión |
+| 🟡 Revisar: señales menores | Conversión detectada, pero menor a 0,5 ha (posible efecto de borde) |
+| 🟠 Revisar: pastura / silvopastoril | Conversión probable a pastura ≥ 0,5 ha (encuadre EUDR incierto) |
+| 🔴 Alto riesgo | Deforestación post-2020 ≥ 0,5 ha |
+
+- un **dictamen de legalidad** según el ordenamiento territorial de bosques nativos (OTBN) que exige la Ley 26.331. La ley define tres categorías: I (rojo) y II (amarillo), donde no se admite desmonte, y III (verde), donde puede autorizarse previa evaluación de impacto ambiental y audiencia pública ([Presidencia de la Nación](https://www.argentina.gob.ar/node/159748); [FARN](https://farn.org.ar/wp-content/uploads/2020/07/Ley-de-Bosques-Ni-un-paso-atras_compressed.pdf)):
+
+| Dictamen | Criterio |
+|---|---|
+| Probable incumplimiento | Desmonte agrícola ≥ 0,5 ha en categoría I o II |
+| Verificar plan de manejo | Pastura/silvopastoril en categoría I o II (algunas normativas admiten ganadería integrada al bosque bajo plan aprobado; verificar la norma provincial) |
+| Verificar permiso | Desmonte en categoría III (legal solo con autorización) |
+| Verificar | Desmonte fuera de los polígonos del OTBN |
+
+> **Legal en Argentina no implica cumplir el EUDR.** Un desmonte autorizado en categoría III puede ser legal según la Ley 26.331 y aun así no cumplir el criterio de deforestación cero del reglamento. Por eso el script evalúa los dos criterios por separado.
+
+**Estado actual:**
+- Las parcelas incluidas son de **demostración y ficticias** (cuadrados de ~100 ha centrados en los puntos de calibración). Para evaluar parcelas reales, se cargan como asset en `parcelasAsset`.
+- **El OTBN todavía no está integrado:** no se encontró una capa oficial descargable del OTBN de Santiago del Estero (solo mapas en PDF y fichas resumen, por ejemplo en [CREA Mapa Legal](https://mapalegal.crea.org.ar/wp-content/uploads/2016/11/ficha_planes_santiago_del_estero.pdf)). Cuando se obtenga la capa, basta con subirla como asset e indicar en `CFG` el campo de categoría y cómo se escriben sus valores.
+
+<!-- TODO: agregar resultados de las parcelas de demostración -->
+
+## Aplicación a la toma de decisiones
+
+Planteo el caso de un comprador europeo de soja o harina de soja que debe cumplir el EUDR.
+
+**Qué permite decidir este trabajo:** que la zona es de **alto riesgo**, con 44.039 ha de bosque convertidas desde 2021 (5,2% del bosque 2020), 20.275 ha de ellas ya con cultivo de verano. Eso justifica exigir verificación parcela por parcela a cualquier proveedor que origine soja en la zona.
+
+**Qué no permite decidir:** aprobar o rechazar un cargamento concreto. Para eso hacen falta los polígonos de las parcelas de origen (análisis por parcela, arriba) y una medida de la exactitud del mapa.
+
+**Mejoras propuestas, por impacto en la decisión:**
+
+1. **Cruzar con las parcelas reales de los proveedores** (herramienta implementada en `04_parcelas_eudr.js`; faltan los datos reales).
+2. **Validación formal con intervalos de confianza**, mediante muestreo aleatorio estratificado e interpretación visual, siguiendo a Olofsson et al. (2014). Una decisión necesita superficies con margen de error, no solo valores puntuales.
+3. **Analizar todas las campañas desde 2021/22.** Una parcela desmontada puede tener maíz un año y soja el siguiente, y para el EUDR importa si **alguna vez** produjo soja sobre tierra deforestada.
+4. **Separar la soja de otros cultivos de verano** con fenología más fina, radar Sentinel-1 o mapas de cultivos existentes.
+5. **Evaluar la legalidad con el OTBN** (herramienta implementada; falta la capa provincial) y, si hay datos públicos, con los permisos de desmonte.
+6. **Contrastar el mapa de bosque de referencia:** comparar JRC GFC2020 con el mapa nacional de bosque nativo en una muestra del Chaco seco.
+7. **Resolver el encuadre de los sistemas silvopastoriles** con asesoría legal y las guías de la Comisión Europea, especialmente para compradores de carne o cuero.
+8. **Pasar a un monitoreo continuo**, con actualización por campaña y alertas de deforestación casi en tiempo real.
+
+> ⚠️ **Puntos a verificar antes de usar esto en una decisión real:** el calendario de aplicación del EUDR (tuvo postergaciones y propuestas de simplificación) y la categoría de riesgo asignada a Argentina por la Comisión Europea, que determina el nivel de diligencia exigido. Esta sección es una propuesta técnica, no asesoramiento legal.
+
+**Referencias:**
+- Reglamento (UE) 2023/1115 — [EUR-Lex](https://eur-lex.europa.eu/eli/reg/2023/1115/oj).
+- Ley 26.331 de Presupuestos Mínimos de Protección Ambiental de los Bosques Nativos — [Presidencia de la Nación](https://www.argentina.gob.ar/node/159748).
+- Olofsson, P., Foody, G. M., Herold, M., Stehman, S. V., Woodcock, C. E. y Wulder, M. A. (2014). Good practices for estimating area and assessing accuracy of land change. *Remote Sensing of Environment*, 148, 42–57.
+
 ## Limitaciones
 
 - **Cultivo de verano ≠ soja.** Con NDVI solo no se distingue la soja del maíz, el algodón o el sorgo. Separar la soja requeriría un mapa de cultivos o un clasificador entrenado con verdad de campo.
@@ -179,13 +237,20 @@ El cálculo completo es pesado: series de Sentinel-2 de 6 años a 10 m. Por eso 
 
 Para recalibrar los umbrales con el mapa en vivo, usar `soloExportar: false` en el script 02. Ojo: consume bastante más cuota.
 
+**Paso 3 · Análisis por parcela**
+1. Pegar `gee/04_parcelas_eudr.js`. Sin configurar nada, evalúa las parcelas de demostración.
+2. Para parcelas reales, subir los polígonos como asset y poner su ruta en `parcelasAsset` (y el campo identificador en `campoIdParcela`).
+3. Para evaluar la legalidad, subir el OTBN como asset y completar `otbnAsset`, `otbnCampo` y `otbnValores`.
+4. El reporte aparece en la consola; en **Tasks** se puede exportar el CSV `Parcelas_EUDR_screening`.
+
 ## Estructura
 
 ```
 gee/
 ├── 01_deforestacion_ndvi_v0.js      # Primera versión (composites max de NDVI)
 ├── 02_deforestacion_soja_eudr_v1.js # Procesamiento completo + exportación a asset
-└── 03_visor_eudr.js                 # Visor liviano sobre el asset
+├── 03_visor_eudr.js                 # Visor liviano sobre el asset
+└── 04_parcelas_eudr.js              # Screening EUDR + Ley 26.331 por parcela
 docs/
 ├── mapa_clasificacion.jpg           # Mapa de portada (clasificación v2)
 └── puntos_calibracion.csv           # Píxeles usados para calibrar los umbrales
@@ -203,7 +268,9 @@ La v0 se conserva como registro: el composite `max()` de NDVI no distingue un bo
 - [ ] Clasificación por lote para reducir la fragmentación entre las clases 2 y 3
 - [ ] Validación con muestreo aleatorio estratificado e interpretación visual
 - [ ] Incorporar un mapa de cultivos para separar la soja
-- [ ] Cruzar con las categorías de los OTBN provinciales
+- [x] Herramienta de screening por parcela (EUDR + Ley 26.331)
+- [ ] Obtener la capa del OTBN de Santiago del Estero y evaluar la legalidad
+- [ ] Analizar todas las campañas desde 2021/22
 
 ## Autor
 
