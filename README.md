@@ -1,6 +1,8 @@
 # EUDR · Deforestación y soja en el Chaco argentino
 
-Análisis geoespacial en **Google Earth Engine** para identificar deforestación posterior al **31/12/2020** (fecha de corte del Reglamento Europeo contra la Deforestación, **UE 2023/1115**) en zonas de expansión agrícola del Chaco argentino, y para estimar qué parte de esa deforestación terminó convertida en cultivo de verano (proxy de soja).
+Análisis geoespacial en **Google Earth Engine** para identificar deforestación posterior al **31/12/2020** (fecha de corte del Reglamento Europeo contra la Deforestación, **UE 2023/1115**) en zonas de expansión agrícola del Chaco argentino, y para estimar qué parte de esa deforestación terminó convertida en cultivo de verano (proxy de soja) y qué parte en pasturas o sistemas silvopastoriles.
+
+**Resultado principal:** 44.039 ha de bosque convertidas después del corte (5,2% del bosque 2020). El 46% pasó a cultivo de verano y el 41% a pastura o silvopastoril.
 
 > Proyecto de portfolio. Los resultados son una aproximación metodológica y **no constituyen una evaluación de debida diligencia EUDR**.
 
