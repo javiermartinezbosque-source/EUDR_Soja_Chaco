@@ -17,8 +17,9 @@ print('Parámetros del asset:', eudr.toDictionary());
 
 // ---------------- CAPAS ----------------
 var nombresClase = ['Otro', 'Bosque estable', 'Deforestación sin cultivo',
-                    'Deforestación → cultivo (riesgo EUDR)', 'Cultivo sin conflicto'];
-var paletaClase = ['f0f0f0', '1a7f37', 'f2a900', 'd62728', 'c9b98a'];
+                    'Deforestación → cultivo (riesgo EUDR)', 'Cultivo sin conflicto',
+                    'Conversión probable a pastura / silvopastoril'];
+var paletaClase = ['f0f0f0', '1a7f37', 'f2a900', 'd62728', 'c9b98a', '8c510a'];
 
 var clase = eudr.select('clase');
 var anio = eudr.select('anio_perdida');
@@ -28,7 +29,8 @@ Map.addLayer(eudr.select('cultivo_verano').selfMask(), {palette: ['c9b98a']}, 'C
 Map.addLayer(eudr.select('perdida_hansen').selfMask(), {palette: ['ff00ff']}, 'Pérdida Hansen post-2020', false);
 Map.addLayer(anio.selfMask(), {min: 2021, max: 2025, palette: ['ffffb2', 'fd8d3c', 'bd0026']},
   'Año de pérdida', false);
-Map.addLayer(clase.selfMask(), {min: 0, max: 4, palette: paletaClase}, 'Clasificación EUDR');
+Map.addLayer(clase.selfMask(), {min: 0, max: 4, palette: paletaClase.slice(0, 5)},
+  'Clasificación EUDR v1 (sin pastura)', false);
 Map.addLayer(ee.Image().paint(aoi, 1, 2), {palette: ['black']}, 'Área de estudio');
 
 // Contexto regional (dataset precalculado: costo bajo)
@@ -76,6 +78,26 @@ var paletaDiag = ['000000', '2b8cbe', 'a6dba0', 'fdae61', 'd7191c', '969696', '7
 Map.addLayer(diagnostico.selfMask(), {min: 0, max: 6, palette: paletaDiag},
   'Diagnóstico vs Hansen (2021–2024)', false);
 
+
+// ---------------- CLASE 5: CONVERSIÓN PROBABLE A PASTURA / SILVOPASTORIL ----------------
+// Pérdida que Hansen registra en 2021–2024 dentro del bosque 2020, sin suelo
+// desnudo en 2025 (diagnóstico 4). La verificación visual indica bloques
+// desmontados con cortinas forestales y cobertura perenne: pasturas
+// implantadas o sistemas silvopastoriles tras rolado.
+// Limitaciones: depende de Hansen (no cubre 2025) y no separa pastura
+// de degradación. Se aplica la misma unidad mínima de 0,5 ha (50 píxeles).
+var pasturaBruta = diagnostico.eq(4);
+var pastura = pasturaBruta.selfMask()
+  .connectedPixelCount(51, true)
+  .gte(50)
+  .unmask(0)
+  .and(pasturaBruta);
+
+var claseV2 = clase.where(pastura, 5).rename('clase_v2');
+
+Map.addLayer(claseV2.selfMask(), {min: 0, max: 5, palette: paletaClase},
+  'Clasificación EUDR v2 (con pastura)');
+
 // RGB Sentinel-2 bajo demanda (⚠️ estas dos capas sí calculan desde
 // imágenes crudas: activarlas solo cuando haga falta verificar)
 var s2Rgb = ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
@@ -119,6 +141,7 @@ var hansenAnio = ee.Image(HANSEN).select('lossyear').unmask(0);
 var paraInspeccion = eudr.select(bandasNdvi).divide(10000)
   .addBands(eudr.select(['clase', 'anio_perdida', 'bosque_jrc']))
   .addBands(diagnostico)
+  .addBands(claseV2)
   .addBands(hansenAnio.where(hansenAnio.gt(0), hansenAnio.add(2000)).rename('hansen_anio'));
 
 Map.onClick(function (coords) {
@@ -131,7 +154,7 @@ Map.style().set('cursor', 'crosshair');
 
 // ---------------- ESTADÍSTICAS BAJO DEMANDA ----------------
 // Se calculan solo al apretar el botón, sobre el asset (no sobre Sentinel-2).
-var bandasStats = eudr.addBands(diagnostico);
+var bandasStats = eudr.addBands(diagnostico).addBands(claseV2);
 
 function hectareasPor(banda) {
   return ee.Image.pixelArea().divide(1e4).addBands(bandasStats.select(banda)).reduceRegion({
@@ -164,7 +187,7 @@ var boton = ui.Button({
   label: 'Calcular hectáreas',
   style: {position: 'top-center'},
   onClick: function () {
-    imprimirTabla('clase', 'Hectáreas por clase', nombresClase);
+    imprimirTabla('clase_v2', 'Hectáreas por clase (v2, con pastura)', nombresClase);
     imprimirTabla('anio_perdida', 'Hectáreas por año de pérdida (0 = sin pérdida)');
     imprimirTabla('perdida_hansen', 'Hansen post-2020 dentro del bosque 2020',
                   {0: 'sin pérdida', 1: 'pérdida'});
