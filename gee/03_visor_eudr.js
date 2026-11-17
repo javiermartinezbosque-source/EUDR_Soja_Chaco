@@ -8,6 +8,10 @@
 var ASSET = 'projects/my-project-javier-464019/assets/eudr_chaco_v1';
 var HANSEN = 'UMD/hansen/global_forest_change_2024_v1_12';
 
+// true = vista limpia para capturas: título, solo la leyenda de clases,
+// sin botón de estadísticas ni leyenda de diagnóstico
+var MODO_CAPTURA = false;
+
 var eudr = ee.Image(ASSET);
 var aoi = eudr.geometry();
 Map.centerObject(aoi, 10);
@@ -121,7 +125,22 @@ for (var i = 1; i < nombresClase.length; i++) {
     ui.Label(nombresClase[i], {margin: '2px 0'})
   ], ui.Panel.Layout.flow('horizontal')));
 }
+leyenda.add(ui.Label('Sin color: otros usos (se ve la imagen de fondo)',
+  {fontSize: '11px', color: '666', margin: '6px 0 0 0'}));
 Map.add(leyenda);
+
+if (MODO_CAPTURA) {
+  var titulo = ui.Panel([
+    ui.Label('Deforestación post-2020 y destino del suelo',
+      {fontWeight: 'bold', fontSize: '18px', margin: '0 0 4px 0'}),
+    ui.Label('Norte de Santiago del Estero, Argentina · Fecha de corte EUDR: 31/12/2020',
+      {fontSize: '13px', margin: '0'}),
+    ui.Label('Sentinel-2 (2020–2026) · JRC GFC2020 · Hansen GFC',
+      {fontSize: '11px', color: '666', margin: '4px 0 0 0'})
+  ], null, {position: 'top-left', padding: '8px 12px'});
+  Map.add(titulo);
+  Map.setControlVisibility({drawingToolsControl: false});
+}
 
 var leyendaDiag = ui.Panel({style: {position: 'bottom-right', padding: '8px'}});
 leyendaDiag.add(ui.Label('Diagnóstico vs Hansen', {fontWeight: 'bold'}));
@@ -132,7 +151,7 @@ for (var j = 1; j < nombresDiag.length; j++) {
   ], ui.Panel.Layout.flow('horizontal')));
 }
 leyendaDiag.add(ui.Label('(activar la capa en Layers)', {fontSize: '11px', color: '666'}));
-Map.add(leyendaDiag);
+if (!MODO_CAPTURA) Map.add(leyendaDiag);
 
 
 // ---------------- INSPECCIÓN POR CLIC ----------------
@@ -195,4 +214,4 @@ var boton = ui.Button({
                   nombresDiag);
   }
 });
-Map.add(boton);
+if (!MODO_CAPTURA) Map.add(boton);
