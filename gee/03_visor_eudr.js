@@ -37,6 +37,45 @@ Map.addLayer(
     .clip(ee.Geometry.Rectangle([-65.5, -29.0, -58.0, -22.0])),
   {palette: ['ff00ff']}, 'Contexto: pérdida Hansen 2021+ (regional)', false);
 
+
+// ---------------- DIAGNÓSTICO: ESTE ANÁLISIS VS HANSEN ----------------
+// Hansen (versión usada) cubre pérdida 2021–2024. Dentro del bosque 2020,
+// cada píxel de discrepancia se asigna a su causa más probable según los
+// datos del asset:
+//   1 Coinciden: ambos detectan pérdida en 2021–2024
+//   2 Coinciden con desfase: Hansen 2021–2024, este análisis recién en 2025
+//   3 Solo Hansen · parche chico: hay suelo desnudo en 2025, pero el parche
+//     no llega a 0,5 ha (lo descarta la unidad mínima)
+//   4 Solo Hansen · sin suelo desnudo en 2025: rebrote tras incendio,
+//     rolado, degradación o tala selectiva
+//   5 Solo Hansen · sin datos Sentinel-2 válidos en 2025
+//   6 Solo este análisis (2021–2024)
+var umbralSuelo = ee.Number(eudr.get('umbral_suelo_p10')).multiply(10000);
+var hansenSi = eudr.select('perdida_hansen').unmask(0).eq(1);
+var nuestra = anio.gte(2021).and(anio.lte(2024));
+var nuestra2025 = anio.eq(2025);
+var p10Final = eudr.select('p10_2025');
+var sinDatos2025 = p10Final.mask().not();
+var sueloFinal = p10Final.unmask(10000).lt(umbralSuelo);
+
+var diagnostico = ee.Image(0)
+  .where(hansenSi.and(nuestra), 1)
+  .where(hansenSi.and(nuestra2025), 2)
+  .where(hansenSi.and(anio.eq(0)).and(sueloFinal), 3)
+  .where(hansenSi.and(anio.eq(0)).and(sueloFinal.not()), 4)
+  .where(hansenSi.and(anio.eq(0)).and(sinDatos2025), 5)
+  .where(hansenSi.not().and(nuestra), 6)
+  .rename('diagnostico')
+  .toInt16();
+
+var nombresDiag = ['', 'Coinciden', 'Coinciden con desfase (nuestra: 2025)',
+                   'Solo Hansen · parche < 0,5 ha', 'Solo Hansen · sin suelo desnudo 2025',
+                   'Solo Hansen · sin datos 2025', 'Solo este análisis'];
+var paletaDiag = ['000000', '2b8cbe', 'a6dba0', 'fdae61', 'd7191c', '969696', '7b3294'];
+
+Map.addLayer(diagnostico.selfMask(), {min: 0, max: 6, palette: paletaDiag},
+  'Diagnóstico vs Hansen (2021–2024)', false);
+
 // RGB Sentinel-2 bajo demanda (⚠️ estas dos capas sí calculan desde
 // imágenes crudas: activarlas solo cuando haga falta verificar)
 var s2Rgb = ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
@@ -62,11 +101,25 @@ for (var i = 1; i < nombresClase.length; i++) {
 }
 Map.add(leyenda);
 
+var leyendaDiag = ui.Panel({style: {position: 'bottom-right', padding: '8px'}});
+leyendaDiag.add(ui.Label('Diagnóstico vs Hansen', {fontWeight: 'bold'}));
+for (var j = 1; j < nombresDiag.length; j++) {
+  leyendaDiag.add(ui.Panel([
+    ui.Label('', {backgroundColor: '#' + paletaDiag[j], padding: '8px', margin: '2px 6px 2px 0'}),
+    ui.Label(nombresDiag[j], {margin: '2px 0'})
+  ], ui.Panel.Layout.flow('horizontal')));
+}
+leyendaDiag.add(ui.Label('(activar la capa en Layers)', {fontSize: '11px', color: '666'}));
+Map.add(leyendaDiag);
+
 
 // ---------------- INSPECCIÓN POR CLIC ----------------
 var bandasNdvi = ['p10_2020', 'p10_2025', 'ndvi_presiembra_p10', 'ndvi_pico_p90'];
+var hansenAnio = ee.Image(HANSEN).select('lossyear').unmask(0);
 var paraInspeccion = eudr.select(bandasNdvi).divide(10000)
-  .addBands(eudr.select(['clase', 'anio_perdida', 'bosque_jrc']));
+  .addBands(eudr.select(['clase', 'anio_perdida', 'bosque_jrc']))
+  .addBands(diagnostico)
+  .addBands(hansenAnio.where(hansenAnio.gt(0), hansenAnio.add(2000)).rename('hansen_anio'));
 
 Map.onClick(function (coords) {
   var punto = ee.Geometry.Point([coords.lon, coords.lat]);
@@ -78,8 +131,10 @@ Map.style().set('cursor', 'crosshair');
 
 // ---------------- ESTADÍSTICAS BAJO DEMANDA ----------------
 // Se calculan solo al apretar el botón, sobre el asset (no sobre Sentinel-2).
+var bandasStats = eudr.addBands(diagnostico);
+
 function hectareasPor(banda) {
-  return ee.Image.pixelArea().divide(1e4).addBands(eudr.select(banda)).reduceRegion({
+  return ee.Image.pixelArea().divide(1e4).addBands(bandasStats.select(banda)).reduceRegion({
     reducer: ee.Reducer.sum().group({groupField: 1, groupName: banda}),
     geometry: aoi,
     scale: 10,
@@ -113,6 +168,8 @@ var boton = ui.Button({
     imprimirTabla('anio_perdida', 'Hectáreas por año de pérdida (0 = sin pérdida)');
     imprimirTabla('perdida_hansen', 'Hansen post-2020 dentro del bosque 2020',
                   {0: 'sin pérdida', 1: 'pérdida'});
+    imprimirTabla('diagnostico', 'Diagnóstico vs Hansen 2021–2024 (0 = sin pérdida en ninguno)',
+                  nombresDiag);
   }
 });
 Map.add(boton);
