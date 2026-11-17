@@ -79,16 +79,50 @@ Para verificar visualmente conviene usar los composites RGB de Sentinel-2 que in
 
 ## Resultados
 
-<!-- TODO: completar con el CSV exportado (Estadisticas_EUDR_Chaco.csv) -->
+Área analizada: **1.104.666 ha**. Son estimaciones sin evaluación formal de exactitud (ver Limitaciones).
 
-| Clase | Hectáreas |
-|---|---|
-| Bosque estable | _pendiente_ |
-| Deforestación sin cultivo | _pendiente_ |
-| Deforestación → cultivo | _pendiente_ |
-| Cultivo sin conflicto | _pendiente_ |
+### Clasificación EUDR
 
-Pérdida por año (2021–2025) y comparación con Hansen: _pendiente_.
+| Clase | Hectáreas | % del área |
+|---|---:|---:|
+| Bosque estable | 816.229 | 73,9% |
+| Deforestación sin cultivo | 5.517 | 0,5% |
+| **Deforestación → cultivo (riesgo EUDR)** | **20.275** | **1,8%** |
+| Cultivo sin conflicto | 144.638 | 13,1% |
+| Otro | 118.007 | 10,7% |
+
+### Indicadores clave
+
+- **Bosque al 31/12/2020:** 842.021 ha (76% del área).
+- **Deforestación post-2020:** 25.792 ha, equivalente al **3,1% del bosque 2020** en cinco años.
+- **Conversión a cultivo de verano:** el **79%** de la superficie desmontada (20.275 ha) tenía cultivo de verano en la campaña 2025/26. Es probablemente una estimación conservadora (ver Limitaciones).
+
+### Pérdida por año
+
+| Año | Hectáreas |
+|---|---:|
+| 2021 | 5.138 |
+| 2022 | 4.909 |
+| 2023 | 5.343 |
+| 2024 | 4.710 |
+| 2025 | 5.692 |
+| **Total** | **25.792** |
+
+El ritmo es estable, alrededor de 5.200 ha/año. El dato de 2025 es menos robusto: la persistencia se verifica en el mismo año, así que un incendio de 2025 podría contarse como desmonte.
+
+### Comparación con Hansen (2021–2024)
+
+| Fuente | Pérdida dentro del bosque 2020 |
+|---|---:|
+| Este análisis | 20.100 ha |
+| Hansen GFC | 41.086 ha |
+
+Este análisis detecta aproximadamente **la mitad** de la pérdida que registra Hansen en el mismo período. Las causas probables, todavía no verificadas, son:
+- se exige que la pérdida persista, por lo que se excluyen incendios con rebrote;
+- Hansen registra pérdida de copa por rolados y degradación, que no llegan a dejar suelo desnudo;
+- se aplica una unidad mínima de 0,5 ha.
+
+Las dos fuentes coinciden en los desmontes agrícolas grandes. Revisar las zonas donde no coinciden queda como próximo paso.
 
 ## Limitaciones
 
@@ -132,6 +166,8 @@ La v0 se conserva como registro: el composite `max()` de NDVI no distingue un bo
 ## Próximos pasos
 
 - [x] Calibración exploratoria de umbrales
+- [x] Cálculo de superficies y comparación con Hansen
+- [ ] Analizar las zonas donde Hansen registra pérdida y este análisis no
 - [ ] Clasificación por lote para reducir la fragmentación entre las clases 2 y 3
 - [ ] Validación con muestreo aleatorio estratificado e interpretación visual
 - [ ] Incorporar un mapa de cultivos para separar la soja
