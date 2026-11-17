@@ -58,6 +58,7 @@ NDVI campaña 2025/26 (presiembra + pico) ─► Cultivo de verano ────�
 | 2 · Deforestación sin cultivo | Pérdida post-2020, sin cultivo de verano detectado |
 | 3 · **Deforestación → cultivo** | Pérdida post-2020 y cultivo de verano en 2025/26: **riesgo EUDR** |
 | 4 · Cultivo sin conflicto | Cultivo sobre tierras que no eran bosque en 2020 |
+| 5 · **Conversión probable a pastura / silvopastoril** | Pérdida Hansen 2021–2024 dentro del bosque 2020, sin suelo desnudo en 2025 (se agregó en la v2, ver Comparación con Hansen) |
 
 6. **Validación cruzada** con la pérdida de Hansen (`lossyear ≥ 2021`) dentro del mismo bosque 2020.
 
@@ -70,6 +71,7 @@ Los umbrales se ajustaron con una calibración exploratoria: se inspeccionaron p
 | Bosque estable | 0,41–0,42 | 0,51 | 0,80 |
 | Cultivo consolidado | 0,15–0,23 | 0,13–0,19 | 0,86–0,91 |
 | Lote recién desmontado | 0,16 | 0,15–0,19 | 0,60–0,69 |
+| Silvopastoril (desmonte 2024) | 0,51 → 0,34 | 0,36 | 0,79 |
 
 - El umbral de suelo desnudo pasó de 0,25 a **0,28**, cerca del punto medio entre cultivo (≤ 0,23) y bosque (≥ 0,34).
 - El pico por sí solo no separa bosque de cultivo (el bosque llega a 0,80). Lo que separa es la combinación con la **presiembra**.
@@ -83,19 +85,32 @@ Para verificar visualmente conviene usar los composites RGB de Sentinel-2 que in
 
 ### Clasificación EUDR
 
+Clasificación v2, que incluye la conversión a pastura:
+
 | Clase | Hectáreas | % del área |
 |---|---:|---:|
-| Bosque estable | 816.229 | 73,9% |
+| Bosque estable | 797.982 | 72,2% |
 | Deforestación sin cultivo | 5.517 | 0,5% |
 | **Deforestación → cultivo (riesgo EUDR)** | **20.275** | **1,8%** |
+| **Conversión probable a pastura / silvopastoril** | **18.247** | **1,7%** |
 | Cultivo sin conflicto | 144.638 | 13,1% |
 | Otro | 118.007 | 10,7% |
 
 ### Indicadores clave
 
 - **Bosque al 31/12/2020:** 842.021 ha (76% del área).
-- **Deforestación post-2020:** 25.792 ha, equivalente al **3,1% del bosque 2020** en cinco años.
-- **Conversión a cultivo de verano:** el **79%** de la superficie desmontada (20.275 ha) tenía cultivo de verano en la campaña 2025/26. Es probablemente una estimación conservadora (ver Limitaciones).
+- **Conversión post-2020:** **44.039 ha**, equivalente al **5,2% del bosque 2020**.
+- **Destino de la superficie convertida:**
+
+| Destino | Hectáreas | % |
+|---|---:|---:|
+| Cultivo de verano (proxy de soja) | 20.275 | 46% |
+| Pastura / silvopastoril (probable) | 18.247 | 41% |
+| Sin uso detectado | 5.517 | 13% |
+
+**Hallazgo principal:** la conversión con destino ganadero es casi tan importante como la agrícola. Con solo el criterio de suelo desnudo (v1), el 79% del desmonte parecía ir a cultivos y la deforestación total quedaba en 25.792 ha (3,1%). La conversión a pastura no se veía.
+
+> ⚠️ **Períodos distintos:** las clases 2 y 3 cubren 2021–2025; la clase 5 solo 2021–2024, porque depende de la versión de Hansen usada. La conversión a pastura de 2025 no está incluida.
 
 ### Pérdida por año
 
@@ -129,15 +144,16 @@ Este análisis detecta aproximadamente **la mitad** de la pérdida que registra 
 
 - **Alta coincidencia en lo que se detecta:** Hansen confirma el **89%** de la pérdida 2021–2024 que identifica este análisis.
 - **La diferencia se concentra en una sola causa:** áreas que Hansen registra como pérdida pero que en 2025 no muestran suelo desnudo. La unidad mínima y el desfase temporal explican poco.
-- **Hipótesis, en verificación:** muchas de esas áreas son bloques rectangulares con cortinas forestales, un patrón típico de desmonte planificado, pero no presentan suelo desnudo. Serían **conversiones a pasturas implantadas o rolados silvopastoriles**: una pastura perenne mantiene cobertura verde todo el año, así que el criterio de suelo desnudo no la detecta.
+- **Causa identificada:** esas áreas son bloques rectangulares con cortinas forestales, un patrón típico de desmonte planificado, pero no presentan suelo desnudo. La verificación visual con Sentinel-2 y la inspección de píxeles indican **conversiones a pasturas o sistemas silvopastoriles** tras rolado. Por ejemplo, en un bloque desmontado en 2024 según Hansen, el p10 de NDVI bajó de 0,51 a 0,34 y la presiembra quedó en un valor intermedio (0,36): el NDVI cae, pero nunca llega a suelo desnudo.
+- **Consecuencia:** el criterio de suelo desnudo es preciso para los desmontes agrícolas, pero **no capta la conversión a ganadería**. Por eso se agregó la clase 5 (v2). Esto es relevante porque el ganado bovino también es una materia prima regulada por el EUDR.
 
-Si la hipótesis se confirma, el método es preciso para detectar desmontes con destino agrícola, pero **subestima la deforestación total**, porque no capta la conversión a ganadería. Esto es relevante porque el ganado bovino también es una materia prima regulada por el EUDR.
+> ⚠️ **Encuadre legal incierto:** si un sistema silvopastoril conserva árboles de más de 5 m con más del 10% de cobertura, por la definición de la FAO podría seguir siendo "bosque" (degradado). Pero el EUDR excluye del concepto de bosque las tierras de uso predominantemente agropecuario. Cómo se clasifica este caso no está resuelto en este análisis: debería verificarse con el texto del reglamento y con las guías de la Comisión Europea.
 
 ## Limitaciones
 
 - **Cultivo de verano ≠ soja.** Con NDVI solo no se distingue la soja del maíz, el algodón o el sorgo. Separar la soja requeriría un mapa de cultivos o un clasificador entrenado con verdad de campo.
 - **Clasificación por píxel.** En lotes recién desmontados, el NDVI del pico varía dentro del mismo lote, y parte del lote puede quedar como "deforestación sin cultivo" (clase 2). Por eso la clase 3 es probablemente una **estimación conservadora**. Una clasificación por lote (objetos) reduciría este efecto.
-- **No detecta la conversión a pasturas.** El criterio de suelo desnudo no capta desmontes con destino ganadero que mantienen cobertura herbácea perenne. Según el diagnóstico con Hansen, eso podría representar alrededor de la mitad de la pérdida total.
+- **Conversión a pastura dependiente de Hansen.** El criterio de suelo desnudo no capta los desmontes con destino ganadero. La clase 5 los recupera usando Hansen, así que hereda sus límites: no cubre 2025 y no distingue la pastura de otras pérdidas de copa sin suelo desnudo, como incendios con rebrote o tala selectiva. Un umbral absoluto tampoco sirve: el p10 de una pastura (0,34) es igual al de algunos bosques ralos (0,34). Sí la delata la **caída relativa** respecto de 2020.
 - **Umbrales calibrados a mano.** Los valores de NDVI se ajustaron inspeccionando píxeles. No hay una validación estadística con puntos de referencia independientes.
 - **Dependencia del mapa JRC.** Sus errores de comisión u omisión en el bosque chaqueño seco se trasladan al resultado.
 - **Bosque seco y caducifolio.** La caída estacional del NDVI en bosques degradados o abiertos puede generar falsos positivos.
@@ -178,7 +194,8 @@ La v0 se conserva como registro: el composite `max()` de NDVI no distingue un bo
 - [x] Calibración exploratoria de umbrales
 - [x] Cálculo de superficies y comparación con Hansen
 - [x] Diagnóstico de discrepancias con Hansen
-- [ ] Verificar la hipótesis de conversión a pastura y agregar la clase "Conversión probable a pastura/rolado"
+- [x] Verificar la conversión a pastura y agregar la clase 5 (v2)
+- [ ] Detectar pasturas por caída relativa del NDVI respecto de 2020, sin depender de Hansen
 - [ ] Clasificación por lote para reducir la fragmentación entre las clases 2 y 3
 - [ ] Validación con muestreo aleatorio estratificado e interpretación visual
 - [ ] Incorporar un mapa de cultivos para separar la soja

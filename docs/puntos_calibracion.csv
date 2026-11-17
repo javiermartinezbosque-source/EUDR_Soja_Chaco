@@ -1,6 +1,7 @@
-lat,lon,clase_v1,interpretacion,p10_2020,p10_2025,ndvi_presiembra_p10,ndvi_pico_p90,bosque_jrc,nota
+lat,lon,clase,interpretacion,p10_2020,p10_2025,ndvi_presiembra_p10,ndvi_pico_p90,bosque_jrc,nota
 -26.50742,-62.95468,1,bosque estable,0.4155,0.4123,0.5125,0.8031,1,
 -26.66226,-62.98558,3,desmonte post-2020 con cultivo,0.3968,0.1463,0.1310,0.9135,1,
 -26.57744,-63.14282,4,cultivo previo a 2020,0.2278,0.2008,0.1917,0.8603,0,
 -26.38456,-62.99313,2,desmonte post-2020 (lote con pico bajo),0.3355,,0.1939,0.6857,1,p10_2025 no registrado
 -26.40168,-62.96910,2,desmonte post-2020 (lote con pico bajo),0.3900,0.1613,0.1501,0.6019,1,
+-26.75186,-62.58321,5,silvopastoril probable (desmonte Hansen 2024),0.5067,0.3430,0.3608,0.7943,1,clase v2; diagnostico 4
