@@ -4,8 +4,9 @@ Análisis geoespacial en **Google Earth Engine** para identificar deforestación
 
 > Proyecto de portfolio. Los resultados son una aproximación metodológica y **no constituyen una evaluación de debida diligencia EUDR**.
 
-<!-- TODO: agregar captura del mapa final -->
-<!-- ![Clasificación EUDR](docs/mapa_clasificacion.png) -->
+![Clasificación EUDR: bosque estable, deforestación post-2020 con y sin cultivo, conversión a pastura y cultivo sin conflicto](docs/mapa_clasificacion.jpg)
+
+*Clasificación EUDR v2 sobre ~1,1 millones de ha en el norte de Santiago del Estero. En rojo, el bosque desmontado después del 31/12/2020 que tenía cultivo de verano en 2025/26; en marrón, la conversión probable a pastura o silvopastoril.*
 
 ---
 
@@ -184,6 +185,7 @@ gee/
 ├── 02_deforestacion_soja_eudr_v1.js # Procesamiento completo + exportación a asset
 └── 03_visor_eudr.js                 # Visor liviano sobre el asset
 docs/
+├── mapa_clasificacion.jpg           # Mapa de portada (clasificación v2)
 └── puntos_calibracion.csv           # Píxeles usados para calibrar los umbrales
 ```
 
