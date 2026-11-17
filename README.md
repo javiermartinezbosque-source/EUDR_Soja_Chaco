@@ -122,7 +122,7 @@ Este análisis detecta aproximadamente **la mitad** de la pérdida que registra 
 - Hansen registra pérdida de copa por rolados y degradación, que no llegan a dejar suelo desnudo;
 - se aplica una unidad mínima de 0,5 ha.
 
-Las dos fuentes coinciden en los desmontes agrícolas grandes. Revisar las zonas donde no coinciden queda como próximo paso.
+En la zona revisada visualmente, las dos fuentes coinciden en los desmontes agrícolas grandes. Revisar sistemáticamente las zonas donde no coinciden queda como próximo paso.
 
 ## Limitaciones
 
