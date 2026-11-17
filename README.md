@@ -117,17 +117,27 @@ El ritmo es estable, alrededor de 5.200 ha/año. El dato de 2025 es menos robust
 | Este análisis | 20.100 ha |
 | Hansen GFC | 41.086 ha |
 
-Este análisis detecta aproximadamente **la mitad** de la pérdida que registra Hansen en el mismo período. Las causas probables, todavía no verificadas, son:
-- se exige que la pérdida persista, por lo que se excluyen incendios con rebrote;
-- Hansen registra pérdida de copa por rolados y degradación, que no llegan a dejar suelo desnudo;
-- se aplica una unidad mínima de 0,5 ha.
+Este análisis detecta aproximadamente **la mitad** de la pérdida que registra Hansen en el mismo período. Para entender por qué, cada píxel de discrepancia se asignó a su causa más probable con los datos del propio análisis (capa de diagnóstico de `03_visor_eudr.js`):
 
-En la zona revisada visualmente, las dos fuentes coinciden en los desmontes agrícolas grandes. Revisar sistemáticamente las zonas donde no coinciden queda como próximo paso.
+| Diagnóstico | Hectáreas | % de la pérdida Hansen |
+|---|---:|---:|
+| Coinciden | 17.944 | 44% |
+| Coinciden con desfase (este análisis la registra en 2025) | 1.613 | 4% |
+| Solo Hansen · parche menor a 0,5 ha | 1.273 | 3% |
+| **Solo Hansen · sin suelo desnudo en 2025** | **20.255** | **49%** |
+| Solo este análisis | 2.157 | — |
+
+- **Alta coincidencia en lo que se detecta:** Hansen confirma el **89%** de la pérdida 2021–2024 que identifica este análisis.
+- **La diferencia se concentra en una sola causa:** áreas que Hansen registra como pérdida pero que en 2025 no muestran suelo desnudo. La unidad mínima y el desfase temporal explican poco.
+- **Hipótesis, en verificación:** muchas de esas áreas son bloques rectangulares con cortinas forestales, un patrón típico de desmonte planificado, pero no presentan suelo desnudo. Serían **conversiones a pasturas implantadas o rolados silvopastoriles**: una pastura perenne mantiene cobertura verde todo el año, así que el criterio de suelo desnudo no la detecta.
+
+Si la hipótesis se confirma, el método es preciso para detectar desmontes con destino agrícola, pero **subestima la deforestación total**, porque no capta la conversión a ganadería. Esto es relevante porque el ganado bovino también es una materia prima regulada por el EUDR.
 
 ## Limitaciones
 
 - **Cultivo de verano ≠ soja.** Con NDVI solo no se distingue la soja del maíz, el algodón o el sorgo. Separar la soja requeriría un mapa de cultivos o un clasificador entrenado con verdad de campo.
 - **Clasificación por píxel.** En lotes recién desmontados, el NDVI del pico varía dentro del mismo lote, y parte del lote puede quedar como "deforestación sin cultivo" (clase 2). Por eso la clase 3 es probablemente una **estimación conservadora**. Una clasificación por lote (objetos) reduciría este efecto.
+- **No detecta la conversión a pasturas.** El criterio de suelo desnudo no capta desmontes con destino ganadero que mantienen cobertura herbácea perenne. Según el diagnóstico con Hansen, eso podría representar alrededor de la mitad de la pérdida total.
 - **Umbrales calibrados a mano.** Los valores de NDVI se ajustaron inspeccionando píxeles. No hay una validación estadística con puntos de referencia independientes.
 - **Dependencia del mapa JRC.** Sus errores de comisión u omisión en el bosque chaqueño seco se trasladan al resultado.
 - **Bosque seco y caducifolio.** La caída estacional del NDVI en bosques degradados o abiertos puede generar falsos positivos.
@@ -167,7 +177,8 @@ La v0 se conserva como registro: el composite `max()` de NDVI no distingue un bo
 
 - [x] Calibración exploratoria de umbrales
 - [x] Cálculo de superficies y comparación con Hansen
-- [ ] Analizar las zonas donde Hansen registra pérdida y este análisis no
+- [x] Diagnóstico de discrepancias con Hansen
+- [ ] Verificar la hipótesis de conversión a pastura y agregar la clase "Conversión probable a pastura/rolado"
 - [ ] Clasificación por lote para reducir la fragmentación entre las clases 2 y 3
 - [ ] Validación con muestreo aleatorio estratificado e interpretación visual
 - [ ] Incorporar un mapa de cultivos para separar la soja
