@@ -88,13 +88,31 @@ function hectareasPor(banda) {
   });
 }
 
+// Imprime una tabla de texto (valor;hectáreas) lista para copiar
+function imprimirTabla(banda, titulo, etiquetas) {
+  hectareasPor(banda).evaluate(function (resultado, error) {
+    if (error) {
+      print('Error en ' + banda + ':', error);
+      return;
+    }
+    var lineas = ['--- ' + titulo + ' ---', 'valor;etiqueta;hectareas'];
+    resultado.groups.forEach(function (g) {
+      var valor = g[banda];
+      var etiqueta = etiquetas ? (etiquetas[valor] || '') : '';
+      lineas.push(valor + ';' + etiqueta + ';' + Math.round(g.sum));
+    });
+    print(lineas.join('\n'));
+  });
+}
+
 var boton = ui.Button({
   label: 'Calcular hectáreas',
   style: {position: 'top-center'},
   onClick: function () {
-    print('Hectáreas por clase (0 = otro):', hectareasPor('clase'));
-    print('Hectáreas por año de pérdida (0 = sin pérdida):', hectareasPor('anio_perdida'));
-    print('Hectáreas Hansen post-2020 en bosque 2020 (1 = pérdida):', hectareasPor('perdida_hansen'));
+    imprimirTabla('clase', 'Hectáreas por clase', nombresClase);
+    imprimirTabla('anio_perdida', 'Hectáreas por año de pérdida (0 = sin pérdida)');
+    imprimirTabla('perdida_hansen', 'Hansen post-2020 dentro del bosque 2020',
+                  {0: 'sin pérdida', 1: 'pérdida'});
   }
 });
 Map.add(boton);
