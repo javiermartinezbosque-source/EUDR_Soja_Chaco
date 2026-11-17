@@ -1,13 +1,16 @@
 // ============================================================
-// ANÁLISIS POR PARCELA — SCREENING EUDR + LEY 26.331
+// ANÁLISIS POR PARCELA — SCREENING EUDR
 // Lee el asset de 02_deforestacion_soja_eudr_v1.js y evalúa
 // polígonos de parcelas (p. ej., los que entrega un proveedor).
 //
 // Por parcela devuelve:
 //   - hectáreas por clase EUDR (v2, con pastura probable)
 //   - años de pérdida (este análisis y Hansen)
-//   - dictamen EUDR de screening
-//   - dictamen de legalidad según OTBN (si se carga el asset OTBN)
+//   - dictamen EUDR de screening (criterio de deforestación cero)
+//
+// No evalúa la legalidad según la normativa argentina (Ley 26.331 /
+// OTBN provincial), que el EUDR también exige: no se dispuso de la capa
+// del OTBN de Santiago del Estero.
 //
 // ⚠️ Es una herramienta de screening para priorizar verificaciones,
 //    no un dictamen legal ni una evaluación de debida diligencia.
@@ -24,17 +27,6 @@ var CFG = {
   // NEW > Shape files) y poner aquí su ruta.
   parcelasAsset: null,
   campoIdParcela: 'id',
-
-  // OTBN (Ley 26.331). null = no se evalúa legalidad.
-  // Subir la capa del OTBN provincial como asset e indicar el campo que
-  // contiene la categoría y cómo se escriben sus valores.
-  otbnAsset: null,
-  otbnCampo: 'CATEGORIA',
-  otbnValores: {
-    'I': 1, '1': 1, 'ROJO': 1,
-    'II': 2, '2': 2, 'AMARILLO': 2,
-    'III': 3, '3': 3, 'VERDE': 3
-  },
 
   // Superficie mínima para considerar una señal como relevante
   // (igual a la unidad mínima del análisis: 0,5 ha)
@@ -93,35 +85,8 @@ var parcelas = CFG.parcelasAsset
   : ee.FeatureCollection(puntosDemo.map(parcelaDemo));
 
 
-// ---------------- 3. OTBN (LEY 26.331) ----------------
-// 1 = Categoría I (rojo), 2 = II (amarillo), 3 = III (verde), 0 = sin OTBN
-var hayOtbn = CFG.otbnAsset !== null;
-var otbn;
-
-if (hayOtbn) {
-  var dicc = ee.Dictionary(CFG.otbnValores);
-  otbn = ee.FeatureCollection(CFG.otbnAsset)
-    .map(function (f) {
-      var v = f.get(CFG.otbnCampo);
-      var texto = ee.String(ee.Algorithms.If(
-        ee.Algorithms.IsEqual(ee.Algorithms.ObjectType(v), 'String'),
-        v,
-        ee.Number(v).toInt().format('%d')));
-      return f.set('cat_otbn', dicc.get(texto.trim().toUpperCase(), 0));
-    })
-    .filter(ee.Filter.gt('cat_otbn', 0))
-    .reduceToImage(['cat_otbn'], ee.Reducer.first())
-    .unmask(0)
-    .rename('otbn');
-} else {
-  otbn = ee.Image(0).rename('otbn');
-}
-
-
-// ---------------- 4. SUPERFICIES POR PARCELA ----------------
+// ---------------- 3. SUPERFICIES POR PARCELA ----------------
 var haPx = ee.Image.pixelArea().divide(1e4);
-var desmAgri = claseV2.eq(2).or(claseV2.eq(3));   // deforestación detectada por suelo desnudo
-var desmPast = claseV2.eq(5);                      // conversión probable a pastura
 
 var bandas = ee.Image.cat([
   haPx.multiply(claseV2.gte(0)).rename('ha_analizada'),
@@ -130,15 +95,7 @@ var bandas = ee.Image.cat([
   haPx.multiply(claseV2.eq(3)).rename('ha_defor_con_cultivo'),
   haPx.multiply(claseV2.eq(4)).rename('ha_cultivo_sin_conflicto'),
   haPx.multiply(claseV2.eq(5)).rename('ha_pastura_probable'),
-  haPx.multiply(hansenSi).rename('ha_hansen_2021_2024'),
-  haPx.multiply(desmAgri.and(otbn.eq(0))).rename('ha_desm_agri_sin_otbn'),
-  haPx.multiply(desmAgri.and(otbn.eq(1))).rename('ha_desm_agri_cat_I'),
-  haPx.multiply(desmAgri.and(otbn.eq(2))).rename('ha_desm_agri_cat_II'),
-  haPx.multiply(desmAgri.and(otbn.eq(3))).rename('ha_desm_agri_cat_III'),
-  haPx.multiply(desmPast.and(otbn.eq(0))).rename('ha_past_sin_otbn'),
-  haPx.multiply(desmPast.and(otbn.eq(1))).rename('ha_past_cat_I'),
-  haPx.multiply(desmPast.and(otbn.eq(2))).rename('ha_past_cat_II'),
-  haPx.multiply(desmPast.and(otbn.eq(3))).rename('ha_past_cat_III')
+  haPx.multiply(hansenSi).rename('ha_hansen_2021_2024')
 ]);
 
 var conSuperficies = bandas.reduceRegions({
@@ -163,7 +120,7 @@ var conAnios = anios.reduceRegions({
 });
 
 
-// ---------------- 5. DICTÁMENES ----------------
+// ---------------- 4. DICTAMEN EUDR ----------------
 function n(f, prop) { return ee.Number(ee.Algorithms.If(f.get(prop), f.get(prop), 0)); }
 
 function dictaminar(f) {
@@ -185,24 +142,6 @@ function dictaminar(f) {
     'ALTO RIESGO: deforestación post-2020 detectada'
   ]);
 
-  // --- Legalidad (Ley 26.331 / OTBN) ---
-  var agriI_II = n(f, 'ha_desm_agri_cat_I').add(n(f, 'ha_desm_agri_cat_II'));
-  var pastI_II = n(f, 'ha_past_cat_I').add(n(f, 'ha_past_cat_II'));
-  var cat_III = n(f, 'ha_desm_agri_cat_III').add(n(f, 'ha_past_cat_III'));
-  var sinOtbn = n(f, 'ha_desm_agri_sin_otbn').add(n(f, 'ha_past_sin_otbn'));
-
-  var legalidad = hayOtbn
-    ? ee.Algorithms.If(agriI_II.gte(tol),
-        'PROBABLE INCUMPLIMIENTO Ley 26.331: desmonte en categoría I/II',
-      ee.Algorithms.If(pastI_II.gte(tol),
-        'VERIFICAR: pastura/silvopastoril en categoría I/II (¿plan de manejo aprobado?)',
-      ee.Algorithms.If(cat_III.gte(tol),
-        'VERIFICAR PERMISO: desmonte en categoría III (requiere autorización)',
-      ee.Algorithms.If(sinOtbn.gte(tol),
-        'VERIFICAR: desmonte fuera de polígonos OTBN',
-        'Sin desmonte post-2020 que evaluar'))))
-    : 'OTBN no cargado: legalidad no evaluada';
-
   var aviso = ee.Algorithms.If(cobertura.lt(0.95),
     'Parcela parcialmente fuera del área analizada', '');
 
@@ -212,7 +151,6 @@ function dictaminar(f) {
     ha_conversion_post2020: agri.add(past),
     codigo_eudr: codigo,
     dictamen_eudr: textosEudr.get(codigo),
-    dictamen_legalidad: legalidad,
     aviso: aviso
   });
 }
@@ -220,13 +158,9 @@ function dictaminar(f) {
 var resultado = conAnios.map(dictaminar);
 
 
-// ---------------- 6. MAPA ----------------
+// ---------------- 5. MAPA ----------------
 var paletaClase = ['f0f0f0', '1a7f37', 'f2a900', 'd62728', 'c9b98a', '8c510a'];
 Map.addLayer(claseV2.selfMask(), {min: 0, max: 5, palette: paletaClase}, 'Clasificación EUDR v2');
-if (hayOtbn) {
-  Map.addLayer(otbn.selfMask(), {min: 1, max: 3, palette: ['e31a1c', 'ffd700', '33a02c']},
-    'OTBN (I rojo · II amarillo · III verde)', false, 0.6);
-}
 
 var coloresDictamen = ee.List(['00c853', 'ffeb3b', 'ff9800', 'ff1744']);
 var parcelasEstilo = resultado.map(function (f) {
@@ -253,7 +187,7 @@ leyenda.add(ui.Label('Dictamen EUDR (borde de la parcela)', {fontWeight: 'bold'}
 Map.add(leyenda);
 
 
-// ---------------- 7. REPORTE EN CONSOLA ----------------
+// ---------------- 6. REPORTE EN CONSOLA ----------------
 function fmt(x) { return (x === null || x === undefined) ? '-' : Number(x).toFixed(1); }
 
 resultado.evaluate(function (fc, error) {
@@ -272,14 +206,13 @@ resultado.evaluate(function (fc, error) {
       'Cultivo sin conflicto: ' + fmt(p.ha_cultivo_sin_conflicto) + ' ha',
       'Años de pérdida (este análisis / Hansen): ' + anioNuestro + ' / ' + anioHansen,
       'EUDR: ' + p.dictamen_eudr,
-      'Legalidad: ' + p.dictamen_legalidad,
       p.aviso ? 'Aviso: ' + p.aviso : ''
     ].join('\n'));
   });
 });
 
 
-// ---------------- 8. EXPORTACIÓN ----------------
+// ---------------- 7. EXPORTACIÓN ----------------
 Export.table.toDrive({
   collection: resultado,
   description: 'Parcelas_EUDR_screening',
@@ -290,8 +223,6 @@ Export.table.toDrive({
     'ha_bosque_estable', 'ha_defor_con_cultivo', 'ha_defor_sin_cultivo',
     'ha_pastura_probable', 'ha_cultivo_sin_conflicto', 'ha_hansen_2021_2024',
     'anio_perdida_min', 'anio_perdida_max', 'anio_hansen_min', 'anio_hansen_max',
-    'ha_desm_agri_cat_I', 'ha_desm_agri_cat_II', 'ha_desm_agri_cat_III', 'ha_desm_agri_sin_otbn',
-    'ha_past_cat_I', 'ha_past_cat_II', 'ha_past_cat_III', 'ha_past_sin_otbn',
-    'ha_conversion_post2020', 'dictamen_eudr', 'dictamen_legalidad', 'aviso'
+    'ha_conversion_post2020', 'dictamen_eudr', 'aviso'
   ]
 });
