@@ -22,6 +22,7 @@ Resultado:
    legalidad según la normativa argentina (Ley 26.331 / OTBN).
 """
 
+import inspect
 from pathlib import Path
 
 import processing
@@ -41,7 +42,8 @@ from qgis.PyQt.QtCore import QVariant
 # ---------------- CONFIGURACIÓN ----------------
 # Carpeta con los GeoTIFF descargados de Drive (EUDR_Chaco_QGIS)
 CARPETA_RASTERS = Path(r"C:/ruta/a/EUDR_Chaco_QGIS")
-# Carpeta del repositorio clonado (para estilos y parcelas demo)
+# Carpeta del repositorio (la que contiene gee/, qgis/ y docs/), para estilos
+# y parcelas demo. Si no es válida, se deduce de la ubicación de este script.
 CARPETA_REPO = Path(r"C:/ruta/a/EUDR_Soja_Chaco")
 
 # Parcelas a evaluar (GeoJSON, shapefile, GPKG...). Por defecto, las demo FICTICIAS.
@@ -68,6 +70,24 @@ DICTAMENES = [
     ("REVISAR: conversión probable a pastura/silvopastoril (encuadre EUDR incierto)", "#ff9800"),
     ("ALTO RIESGO: deforestación post-2020 detectada", "#ff1744"),
 ]
+
+
+# ---------------- 0. VERIFICAR RUTAS ----------------
+if not (CARPETA_REPO / "qgis" / "estilos").is_dir():
+    _script = Path(inspect.currentframe().f_code.co_filename)
+    if (_script.parent.parent / "qgis" / "estilos").is_dir():
+        CARPETA_REPO = _script.parent.parent
+        print(f"CARPETA_REPO deducida de la ubicación del script: {CARPETA_REPO}")
+        if str(PARCELAS).startswith(r"C:/ruta/a") or not PARCELAS.exists():
+            PARCELAS = CARPETA_REPO / "qgis" / "datos" / "parcelas_demo.geojson"
+    else:
+        raise FileNotFoundError(
+            f"CARPETA_REPO no es válida: {CARPETA_REPO}\n"
+            "Debe ser la carpeta que contiene gee/, qgis/ y docs/ "
+            "(ojo: al descomprimir el ZIP de GitHub suele quedar una carpeta dentro de otra).")
+
+if not CARPETA_RASTERS.is_dir():
+    raise FileNotFoundError(f"CARPETA_RASTERS no existe: {CARPETA_RASTERS}")
 
 
 # ---------------- 1. RÁSTERS ----------------
@@ -106,7 +126,9 @@ ha_por_pixel = clasificacion.rasterUnitsPerPixelX() * clasificacion.rasterUnitsP
 # ---------------- 2. PARCELAS ----------------
 parcelas = QgsVectorLayer(str(PARCELAS), "parcelas", "ogr")
 if not parcelas.isValid():
-    raise RuntimeError(f"No se pudo abrir {PARCELAS}")
+    raise RuntimeError(
+        f"No se pudo abrir {PARCELAS}\n"
+        "Revisar PARCELAS y CARPETA_REPO (debe ser la carpeta que contiene gee/, qgis/ y docs/).")
 
 reproyectadas = processing.run("native:reprojectlayer", {
     "INPUT": parcelas,
