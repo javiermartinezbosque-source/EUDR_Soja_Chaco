@@ -27,7 +27,7 @@ Escrita para QGIS 3.44. Los nombres de los menús pueden variar levemente según
 2. Cargar los rásters y aplicar los estilos de `qgis/estilos/`: **Propiedades de la capa > Simbología > Estilo > Cargar estilo**.
    - `clasificacion_v2.qml`: paleta de clases, igual a la de GEE (la clase "Otro" es transparente).
    - `anio_perdida.qml` y `anio_hansen.qml`: escala de amarillo (2021) a rojo oscuro (2025).
-3. **Sin fondo (alternativa recomendada para el mapa final):** dar a la clase 0 un gris claro opaco (`#e0e0e0`) con la etiqueta "Otros usos". El mapa queda limpio y no depende de cuota ni de licencias de imágenes.
+3. **Sin fondo (alternativa recomendada para el mapa final):** cargar el estilo `clasificacion_v2_mapa.qml`, que da a la clase 0 un gris claro opaco (`#e0e0e0`) con la etiqueta "Otros usos". El mapa queda limpio y no depende de cuota ni de licencias de imágenes.
    **Con fondo** `s2_rgb_2025.tif`: **Color multibanda** (R = banda 1, G = 2, B = 3), mínimo 1 y máximo 255, con 0 como "sin dato".
 4. Cargar `qgis/datos/area_estudio.geojson` con solo el contorno (sin relleno, línea negra de 0,5 mm).
 
