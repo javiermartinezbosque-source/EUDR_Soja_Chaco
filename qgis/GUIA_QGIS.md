@@ -40,7 +40,7 @@ Escrita para QGIS 3.44. Los nombres de los menús pueden variar levemente según
    - aplica las mismas reglas de dictamen que `gee/04_parcelas_eudr.js`;
    - guarda `screening_parcelas.gpkg` y `screening_parcelas.csv`;
    - carga las capas con sus estilos (borde de cada parcela coloreado según el dictamen).
-4. **Control:** con las parcelas demo, los resultados deberían coincidir con los de GEE (ver la tabla del README). Puede haber diferencias menores, de décimas de hectárea, porque GEE y QGIS deciden de forma distinta qué píxeles del borde caen dentro de cada polígono.
+4. **Control:** con las parcelas demo, los resultados coinciden con los de GEE: los mismos dictámenes y años, y diferencias de como mucho 0,6 ha por clase (menos del 1%). Las diferencias vienen de cómo cada programa decide qué píxeles del borde caen dentro del polígono, y de que QGIS mide superficies en el plano UTM y GEE sobre el elipsoide.
 
 Para evaluar **parcelas reales**, cambiar `PARCELAS` por el archivo del proveedor (GeoJSON, shapefile o GPKG) y `CAMPO_ID` por su campo identificador.
 

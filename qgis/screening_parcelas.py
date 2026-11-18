@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-SCREENING EUDR POR PARCELA — versión QGIS (escrito para QGIS 3.44; pendiente de prueba)
+SCREENING EUDR POR PARCELA — versión QGIS (probado en QGIS 3.44 con las parcelas demo)
 
 Reproduce en QGIS el análisis de gee/04_parcelas_eudr.js a partir de los
 rásters exportados con gee/05_exportar_qgis.js. No requiere Earth Engine.
@@ -227,7 +227,9 @@ for f in con_hansen.getFeatures():
     else:
         codigo = 0
 
-    pct = 100 * ha_analizada / ha_parcela if ha_parcela else 0
+    # Se cuentan píxeles enteros cuyo centro cae en la parcela: en el borde
+    # pueden sumar algo más que el área exacta, por eso se limita a 100 %.
+    pct = min(100.0, 100 * ha_analizada / ha_parcela) if ha_parcela else 0
     ident = f[CAMPO_ID] if f.fields().indexOf(CAMPO_ID) >= 0 else str(f.id())
     desc = f["descripcion"] if f.fields().indexOf("descripcion") >= 0 else ""
 

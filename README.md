@@ -188,6 +188,8 @@ El análisis regional muestra **dónde** hay riesgo, pero una decisión de compr
 - **DEMO-04** muestra el efecto de la clasificación por píxel. En un lote desmontado en 2024, con su primer cultivo todavía irregular, la mayor parte queda como "sin cultivo". **No afecta el dictamen**, porque las dos clases de deforestación dan alto riesgo: la fragmentación sesga las estadísticas de destino del suelo, pero no la decisión sobre la parcela.
 - **DEMO-05** muestra el aporte de la clase 5: con solo el criterio de suelo desnudo, esta parcela convertida en 2024 habría salido sin deforestación.
 
+**Verificación en QGIS:** el screening reproducido en QGIS (`qgis/screening_parcelas.py`, a partir de los rásters exportados) da los **mismos dictámenes y años** en las 5 parcelas, con diferencias de como mucho 0,6 ha por clase (< 1%) debidas al tratamiento de los píxeles de borde. Es decir, la evaluación de parcelas puede hacerse sin Earth Engine.
+
 ## Aplicación a la toma de decisiones
 
 Planteo el caso de un comprador europeo de soja o harina de soja que debe cumplir el EUDR.
@@ -282,7 +284,8 @@ La v0 se conserva como registro: el composite `max()` de NDVI no distingue un bo
 - [ ] Validación con muestreo aleatorio estratificado e interpretación visual
 - [ ] Incorporar un mapa de cultivos para separar la soja
 - [x] Herramienta de screening por parcela (EUDR)
-- [ ] Flujo QGIS: verificar el screening en PyQGIS contra GEE y armar el mapa final
+- [x] Flujo QGIS: screening en PyQGIS verificado contra GEE
+- [ ] Mapa final en el diseñador de impresión de QGIS
 - [ ] Analizar todas las campañas desde 2021/22
 
 ## Autor
