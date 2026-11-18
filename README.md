@@ -172,7 +172,21 @@ El análisis regional muestra **dónde** hay riesgo, pero una decisión de compr
 **Estado actual:**
 - Las parcelas incluidas son de **demostración y ficticias** (cuadrados de ~100 ha centrados en los puntos de calibración). Para evaluar parcelas reales, se cargan como asset en `parcelasAsset`.
 
-<!-- TODO: agregar resultados de las parcelas de demostración -->
+**Resultados con las parcelas de demostración** (~100 ha cada una, ficticias):
+
+| Parcela | Bosque estable | Defor. → cultivo | Defor. sin cultivo | Pastura probable | Cultivo sin conflicto | Año de pérdida (este análisis / Hansen) | Dictamen |
+|---|---:|---:|---:|---:|---:|---|---|
+| DEMO-01 | 98,1 | 0,0 | 0,0 | 0,0 | 0,0 | – / – | 🟢 Sin deforestación |
+| DEMO-02 | 3,3 | 86,4 | 6,1 | 3,5 | 0,0 | 2021–2025 / 2021–2023 | 🔴 Alto riesgo |
+| DEMO-03 | 0,0 | 0,0 | 0,0 | 0,0 | 97,1 | – / – | 🟢 Sin deforestación |
+| DEMO-04 | 10,1 | 16,1 | 51,8 | 2,7 | 0,5 | 2024–2025 / 2024 | 🔴 Alto riesgo |
+| DEMO-05 | 13,5 | 0,0 | 0,0 | 85,7 | 0,0 | – / 2024 | 🟠 Revisar: pastura |
+
+*Superficies en hectáreas. La diferencia hasta ~100 ha corresponde a la clase "Otro".*
+
+- **DEMO-03** es el caso de soja que cumple el criterio: cultivo sobre tierra que ya no era bosque en 2020.
+- **DEMO-04** muestra el efecto de la clasificación por píxel. En un lote desmontado en 2024, con su primer cultivo todavía irregular, la mayor parte queda como "sin cultivo". **No afecta el dictamen**, porque las dos clases de deforestación dan alto riesgo: la fragmentación sesga las estadísticas de destino del suelo, pero no la decisión sobre la parcela.
+- **DEMO-05** muestra el aporte de la clase 5: con solo el criterio de suelo desnudo, esta parcela convertida en 2024 habría salido sin deforestación.
 
 ## Aplicación a la toma de decisiones
 
