@@ -246,6 +246,10 @@ Para recalibrar los umbrales con el mapa en vivo, usar `soloExportar: false` en 
 2. Para parcelas reales, subir los polígonos como asset y poner su ruta en `parcelasAsset` (y el campo identificador en `campoIdParcela`).
 3. El reporte aparece en la consola; en **Tasks** se puede exportar el CSV `Parcelas_EUDR_screening`.
 
+**Paso 4 · QGIS (mapa final y screening sin Earth Engine)**
+1. Ejecutar `gee/05_exportar_qgis.js`, lanzar las tareas y descargar de Drive la carpeta `EUDR_Chaco_QGIS`.
+2. Seguir [`qgis/GUIA_QGIS.md`](qgis/GUIA_QGIS.md): estilos, screening por parcela con `qgis/screening_parcelas.py` y diseño del mapa final.
+
 ## Estructura
 
 ```
@@ -253,7 +257,13 @@ gee/
 ├── 01_deforestacion_ndvi_v0.js      # Primera versión (composites max de NDVI)
 ├── 02_deforestacion_soja_eudr_v1.js # Procesamiento completo + exportación a asset
 ├── 03_visor_eudr.js                 # Visor liviano sobre el asset
-└── 04_parcelas_eudr.js              # Screening EUDR por parcela
+├── 04_parcelas_eudr.js              # Screening EUDR por parcela
+└── 05_exportar_qgis.js              # Exportación de rásters para QGIS
+qgis/
+├── GUIA_QGIS.md                     # Guía: estilos, screening y mapa final
+├── screening_parcelas.py            # Screening por parcela en PyQGIS
+├── estilos/                         # Estilos .qml de los rásters
+└── datos/                           # Parcelas demo y área de estudio (GeoJSON)
 docs/
 ├── mapa_clasificacion.jpg           # Mapa de portada (clasificación v2)
 └── puntos_calibracion.csv           # Píxeles usados para calibrar los umbrales
@@ -272,6 +282,7 @@ La v0 se conserva como registro: el composite `max()` de NDVI no distingue un bo
 - [ ] Validación con muestreo aleatorio estratificado e interpretación visual
 - [ ] Incorporar un mapa de cultivos para separar la soja
 - [x] Herramienta de screening por parcela (EUDR)
+- [ ] Flujo QGIS: verificar el screening en PyQGIS contra GEE y armar el mapa final
 - [ ] Analizar todas las campañas desde 2021/22
 
 ## Autor

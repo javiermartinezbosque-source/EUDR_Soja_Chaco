@@ -1,0 +1,176 @@
+{
+ "type": "FeatureCollection",
+ "name": "parcelas_demo",
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "id": "DEMO-01",
+    "descripcion": "FICTICIA - centrada en punto de bosque estable"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -62.95968,
+       -26.51192
+      ],
+      [
+       -62.94968,
+       -26.51192
+      ],
+      [
+       -62.94968,
+       -26.50292
+      ],
+      [
+       -62.95968,
+       -26.50292
+      ],
+      [
+       -62.95968,
+       -26.51192
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "id": "DEMO-02",
+    "descripcion": "FICTICIA - centrada en punto de desmonte post-2020 con cultivo"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -62.99058,
+       -26.66676
+      ],
+      [
+       -62.98058,
+       -26.66676
+      ],
+      [
+       -62.98058,
+       -26.65776
+      ],
+      [
+       -62.99058,
+       -26.65776
+      ],
+      [
+       -62.99058,
+       -26.66676
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "id": "DEMO-03",
+    "descripcion": "FICTICIA - centrada en punto de cultivo previo a 2020"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -63.14782,
+       -26.58194
+      ],
+      [
+       -63.13782,
+       -26.58194
+      ],
+      [
+       -63.13782,
+       -26.57294
+      ],
+      [
+       -63.14782,
+       -26.57294
+      ],
+      [
+       -63.14782,
+       -26.58194
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "id": "DEMO-04",
+    "descripcion": "FICTICIA - centrada en punto de desmonte post-2020 con pico bajo"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -62.9741,
+       -26.40618
+      ],
+      [
+       -62.9641,
+       -26.40618
+      ],
+      [
+       -62.9641,
+       -26.39718
+      ],
+      [
+       -62.9741,
+       -26.39718
+      ],
+      [
+       -62.9741,
+       -26.40618
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "id": "DEMO-05",
+    "descripcion": "FICTICIA - centrada en punto de silvopastoril probable"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -62.58821,
+       -26.75636
+      ],
+      [
+       -62.57821,
+       -26.75636
+      ],
+      [
+       -62.57821,
+       -26.74736
+      ],
+      [
+       -62.58821,
+       -26.74736
+      ],
+      [
+       -62.58821,
+       -26.75636
+      ]
+     ]
+    ]
+   }
+  }
+ ]
+}

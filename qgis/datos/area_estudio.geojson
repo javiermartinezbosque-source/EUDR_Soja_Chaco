@@ -1,0 +1,39 @@
+{
+ "type": "FeatureCollection",
+ "name": "area_estudio",
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "nombre": "Área de estudio (1° x 1°)"
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -63.5,
+       -27.0
+      ],
+      [
+       -62.5,
+       -27.0
+      ],
+      [
+       -62.5,
+       -26.0
+      ],
+      [
+       -63.5,
+       -26.0
+      ],
+      [
+       -63.5,
+       -27.0
+      ]
+     ]
+    ]
+   }
+  }
+ ]
+}
