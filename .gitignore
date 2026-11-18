@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+# Rásters exportados de GEE (pesados, se distribuyen por Drive)
+*.tif
+*.vrt
+*.gpkg
