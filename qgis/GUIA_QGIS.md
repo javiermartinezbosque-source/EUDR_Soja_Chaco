@@ -15,7 +15,7 @@ Escrita para QGIS 3.44. Los nombres de los menús pueden variar levemente según
    | `clasificacion_v2.tif` | Clases EUDR 0–5 | Byte, 10 m | 255 |
    | `anio_perdida.tif` | Año de pérdida (este análisis) | UInt16, 10 m | 0 |
    | `anio_hansen.tif` | Año de pérdida Hansen 2021–2024 | UInt16, 10 m | 0 |
-   | `s2_rgb_2025.tif` | Fondo Sentinel-2 RGB (opcional) | Byte, 30 m | 0 |
+   | `s2_rgb_2025.tif` | Fondo Sentinel-2 RGB (opcional) | Byte, 50 m | 0 |
 
 2. Descargar la carpeta `EUDR_Chaco_QGIS` de Google Drive.
    - Si GEE dividió algún ráster en varios archivos (`nombre-0000000000-0000000000.tif`, …), el script de screening los une automáticamente en un VRT. Para el mapa, se puede hacer lo mismo con **Ráster > Miscelánea > Construir ráster virtual**.
@@ -27,7 +27,8 @@ Escrita para QGIS 3.44. Los nombres de los menús pueden variar levemente según
 2. Cargar los rásters y aplicar los estilos de `qgis/estilos/`: **Propiedades de la capa > Simbología > Estilo > Cargar estilo**.
    - `clasificacion_v2.qml`: paleta de clases, igual a la de GEE (la clase "Otro" es transparente).
    - `anio_perdida.qml` y `anio_hansen.qml`: escala de amarillo (2021) a rojo oscuro (2025).
-3. Fondo `s2_rgb_2025.tif`: **Color multibanda** (R = banda 1, G = 2, B = 3), mínimo 1 y máximo 255, con 0 como "sin dato".
+3. **Sin fondo (alternativa recomendada para el mapa final):** dar a la clase 0 un gris claro opaco (`#e0e0e0`) con la etiqueta "Otros usos". El mapa queda limpio y no depende de cuota ni de licencias de imágenes.
+   **Con fondo** `s2_rgb_2025.tif`: **Color multibanda** (R = banda 1, G = 2, B = 3), mínimo 1 y máximo 255, con 0 como "sin dato".
 4. Cargar `qgis/datos/area_estudio.geojson` con solo el contorno (sin relleno, línea negra de 0,5 mm).
 
 ## 3. Screening por parcela (`screening_parcelas.py`)

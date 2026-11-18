@@ -8,7 +8,7 @@
 //   3. anio_hansen.tif       — año de pérdida Hansen 2021–2024 dentro del
 //                              bosque 2020 (UInt16, 10 m)
 //   4. s2_rgb_2025.tif       — fondo Sentinel-2 RGB, estación seca 2025
-//                              (Byte, 30 m) — OPCIONAL, consume más cuota
+//                              (Byte, 50 m) — OPCIONAL, consume más cuota
 //
 // Todos en EPSG:32720 (UTM 20S). Valor sin dato: 255 en la clasificación
 // y 0 en los rásters de año (píxeles sin pérdida = transparentes).
@@ -23,7 +23,12 @@ var CFG = {
 
   // El fondo RGB recalcula Sentinel-2: dejar en false si la cuota es justa
   exportarFondoRgb: true,
-  escalaFondo: 30
+  // true = exportar SOLO el fondo (si las otras tres capas ya se descargaron)
+  soloFondo: false,
+  // 50 m alcanza para un A4 a 1:600.000 (a 300 ppp, 1 punto ≈ 50 m)
+  escalaFondo: 50,
+  fechasFondo: ['2025-07-01', '2025-10-01'],
+  nubesMaxFondo: 20
 };
 
 var eudr = ee.Image(CFG.asset);
@@ -71,15 +76,17 @@ function exportar(img, nombre, escala, sinDato) {
   });
 }
 
-exportar(claseV2, 'clasificacion_v2', 10, 255);
-exportar(anioPerdida, 'anio_perdida', 10, 0);
-exportar(anioHansen, 'anio_hansen', 10, 0);
+if (!CFG.soloFondo) {
+  exportar(claseV2, 'clasificacion_v2', 10, 255);
+  exportar(anioPerdida, 'anio_perdida', 10, 0);
+  exportar(anioHansen, 'anio_hansen', 10, 0);
+}
 
 if (CFG.exportarFondoRgb) {
   var rgb = ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
     .filterBounds(aoi)
-    .filterDate('2025-06-01', '2025-10-01')
-    .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 30))
+    .filterDate(CFG.fechasFondo[0], CFG.fechasFondo[1])
+    .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', CFG.nubesMaxFondo))
     .linkCollection(ee.ImageCollection('GOOGLE/CLOUD_SCORE_PLUS/V1/S2_HARMONIZED'), ['cs_cdf'])
     .map(function (img) { return img.updateMask(img.select('cs_cdf').gte(0.6)); })
     .median()
